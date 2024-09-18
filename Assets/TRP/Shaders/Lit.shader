@@ -1,9 +1,9 @@
-Shader "TRP/Unlit"
+Shader "TRP/Lit"
 {
     Properties
     {
         _BaseMap("Texture", 2D) = "white" {}
-        _BaseColor("Color", Color) = (1.0, 1.0, 1.0, 1.0)
+        _BaseColor("Color", Color) = (0.5, 0.5, 0.5, 1.0)
 
         [Toggle] _CLIPPING ("Alpha Clipping", Float) = 0
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
@@ -19,7 +19,7 @@ Shader "TRP/Unlit"
         {
             Tags
             {
-                "LightMode" = "SRPDefaultUnlit"
+                "LightMode" = "TRPLit"
             }
 
             Blend [_SrcBlend] [_DstBlend]
@@ -30,10 +30,10 @@ Shader "TRP/Unlit"
             #pragma multi_compile_instancing
             #pragma shader_feature _CLIPPING_ON
 
-            #pragma vertex UnlitPassVertex
-            #pragma fragment UnlitPassFragment
+            #pragma vertex LitPassVertex
+            #pragma fragment LitPassFragment
 
-            #include "UnlitPass.hlsl"
+            #include "LitPass.hlsl"
             ENDHLSL
         }
     }

@@ -4,12 +4,14 @@ using UnityEngine.Rendering;
 public partial class CameraRenderer 
 {
     private static readonly ShaderTagId unlitShaderTagId = new("SRPDefaultUnlit");
+    private static readonly ShaderTagId litShaderTagId = new("TRPLit");
     
     private ScriptableRenderContext context;
     private Camera camera;
     
     private CullingResults cullingResults;
 
+    private readonly Lighting lighting = new();
     private readonly CommandBuffer buffer = new();
 
     public void Render(ScriptableRenderContext context, Camera camera, bool useDynamicBatching, bool useGPUInstancing) 
@@ -23,6 +25,7 @@ public partial class CameraRenderer
         if (!Cull()) return;
 
         Setup();
+        lighting.Setup(context, cullingResults);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
@@ -56,11 +59,14 @@ public partial class CameraRenderer
         {
             criteria = SortingCriteria.CommonOpaque
         };
+
         DrawingSettings drawingSettings = new(unlitShaderTagId, sortingSettings)
         {
             enableInstancing = useGPUInstancing,
             enableDynamicBatching = useDynamicBatching,
         };
+        drawingSettings.SetShaderPassName(1, litShaderTagId);
+
         FilteringSettings filteringSettings = new(RenderQueueRange.opaque);
 
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
