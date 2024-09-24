@@ -37,6 +37,7 @@ Shader "TRP/Unlit"
 
             #pragma shader_feature _CLIPPING_ON
 
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma multi_compile_instancing
 
             #pragma vertex UnlitPassVertex
@@ -60,6 +61,7 @@ Shader "TRP/Unlit"
 
             #pragma shader_feature _SHADOWS_ON _SHADOWS_CLIP _SHADOWS_DITHER _SHADOWS_OFF
 
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_instancing
 			
 			#pragma vertex ShadowCasterPassVertex

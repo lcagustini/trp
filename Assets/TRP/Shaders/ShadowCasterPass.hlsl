@@ -43,6 +43,8 @@ void ShadowCasterPassFragment(fragVaryings input) {
     UNITY_SETUP_INSTANCE_ID(input);
 
     float4 base = GetBase(input.baseUV);
+    
+    ClipLOD(input.positionCS.xy, unity_LODFade.x);
 
 #ifdef _SHADOWS_CLIP
     clip(base.a - GetCutoff(input.baseUV));

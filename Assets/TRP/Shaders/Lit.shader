@@ -45,6 +45,7 @@ Shader "TRP/Lit"
             #pragma multi_compile _CASCADE_BLEND_HARD _CASCADE_BLEND_SOFT _CASCADE_BLEND_DITHER
 			#pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ _SHADOW_MASK_ALWAYS _SHADOW_MASK_DISTANCE
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma multi_compile_instancing
 
             #pragma vertex LitPassVertex
@@ -68,6 +69,7 @@ Shader "TRP/Lit"
 
             #pragma shader_feature _SHADOWS_ON _SHADOWS_CLIP _SHADOWS_DITHER _SHADOWS_OFF
 
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_instancing
 			
 			#pragma vertex ShadowCasterPassVertex
