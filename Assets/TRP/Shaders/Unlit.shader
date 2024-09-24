@@ -3,7 +3,7 @@ Shader "TRP/Unlit"
     Properties
     {
         _BaseMap("Texture", 2D) = "white" {}
-        _BaseColor("Color", Color) = (1.0, 1.0, 1.0, 1.0)
+        [HDR] _BaseColor("Color", Color) = (1.0, 1.0, 1.0, 1.0)
 
         [Toggle] _CLIPPING ("Alpha Clipping", Float) = 0
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
@@ -17,6 +17,11 @@ Shader "TRP/Unlit"
 
     SubShader
     {
+	    HLSLINCLUDE
+	    #include "../ShaderLibrary/Common.hlsl"
+	    #include "UnlitInput.hlsl"
+    	ENDHLSL
+
         Pass
         {
             Tags
@@ -63,5 +68,25 @@ Shader "TRP/Unlit"
 			#include "ShadowCasterPass.hlsl"
 			ENDHLSL
 		}
+
+		Pass
+		{
+			Tags
+			{
+				"LightMode" = "Meta"
+			}
+
+			Cull Off
+
+			HLSLPROGRAM
+			#pragma target 3.5
+
+			#pragma vertex MetaPassVertex
+			#pragma fragment MetaPassFragment
+
+			#include "MetaPass.hlsl"
+			ENDHLSL
+		}
     }
+    CustomEditor "TRPShaderGUI"
 }

@@ -4,6 +4,8 @@ Shader "TRP/Lit"
     {
         _BaseMap("Texture", 2D) = "white" {}
         _BaseColor("Color", Color) = (0.5, 0.5, 0.5, 1.0)
+        [NoScaleOffset] _EmissiveMap("Emissive", 2D) = "white" {}
+        [HDR] _EmissiveColor("Emissive Color", Color) = (0.0, 0.0, 0.0, 1.0)
 
         [Toggle] _CLIPPING ("Alpha Clipping", Float) = 0
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
@@ -18,6 +20,11 @@ Shader "TRP/Lit"
 
     SubShader
     {
+	    HLSLINCLUDE
+	    #include "../ShaderLibrary/Common.hlsl"
+	    #include "LitInput.hlsl"
+    	ENDHLSL
+    	
         Pass
         {
             Tags
@@ -36,6 +43,8 @@ Shader "TRP/Lit"
 
             #pragma multi_compile _DIRECTIONAL_PCF2 _DIRECTIONAL_PCF3 _DIRECTIONAL_PCF5 _DIRECTIONAL_PCF7
             #pragma multi_compile _CASCADE_BLEND_HARD _CASCADE_BLEND_SOFT _CASCADE_BLEND_DITHER
+			#pragma multi_compile _ LIGHTMAP_ON
+            #pragma multi_compile _ _SHADOW_MASK_ALWAYS _SHADOW_MASK_DISTANCE
             #pragma multi_compile_instancing
 
             #pragma vertex LitPassVertex
@@ -67,5 +76,25 @@ Shader "TRP/Lit"
 			#include "ShadowCasterPass.hlsl"
 			ENDHLSL
 		}
+
+		Pass
+		{
+			Tags
+			{
+				"LightMode" = "Meta"
+			}
+
+			Cull Off
+
+			HLSLPROGRAM
+			#pragma target 3.5
+
+			#pragma vertex MetaPassVertex
+			#pragma fragment MetaPassFragment
+
+			#include "MetaPass.hlsl"
+			ENDHLSL
+		}
     }
+    CustomEditor "TRPShaderGUI"
 }

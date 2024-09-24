@@ -1,6 +1,10 @@
 #ifndef TRP_COMMON
 #define TRP_COMMON
 
+#if defined(_SHADOW_MASK_DISTANCE) || defined(_SHADOW_MASK_ALWAYS)
+#define SHADOWS_SHADOWMASK
+#endif
+
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "UnityInput.hlsl"
 
