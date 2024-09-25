@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class ThorRenderPipeline : RenderPipeline
+public partial class ThorRenderPipeline : RenderPipeline
 {
     private readonly CameraRenderer renderer = new();
 
@@ -18,6 +18,8 @@ public class ThorRenderPipeline : RenderPipeline
         this.shadowSettings = shadowSettings;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
+
+        InitializeEditor();
     }
 
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
@@ -31,4 +33,6 @@ public class ThorRenderPipeline : RenderPipeline
             renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, shadowSettings);
         }
     }
+    
+    partial void InitializeEditor();
 }
