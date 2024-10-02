@@ -27,3 +27,6 @@ MonoBehaviour:
       cascadeRatio1: 0.1
       cascadeRatio2: 0.25
       cascadeRatio3: 0.5
+    other:
+      atlasSize: 1024
+      filter: 0

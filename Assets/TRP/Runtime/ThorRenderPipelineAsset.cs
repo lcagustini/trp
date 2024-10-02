@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-[CreateAssetMenu(menuName = "Rendering/Thor Render Pipeline")]
+[CreateAssetMenu(menuName = "TRP/TRP Pipeline")]
 public class ThorRenderPipelineAsset : RenderPipelineAsset
 {
     [SerializeField] private bool useDynamicBatching = true;

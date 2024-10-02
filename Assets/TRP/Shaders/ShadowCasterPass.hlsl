@@ -14,6 +14,8 @@ struct fragVaryings {
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
+bool _ShadowPancaking;
+
 fragVaryings ShadowCasterPassVertex(vertexAttrib input) {
     UNITY_SETUP_INSTANCE_ID(input);
 
@@ -26,12 +28,14 @@ fragVaryings ShadowCasterPassVertex(vertexAttrib input) {
     float3 positionWS = TransformObjectToWorld(input.positionOS);
     output.positionCS = TransformWorldToHClip(positionWS);
 
-    // Shadow Pancaking
+    if (_ShadowPancaking)
+    {
 #if UNITY_REVERSED_Z
-    output.positionCS.z = min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+        output.positionCS.z = min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
 #else
-    output.positionCS.z = max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+        output.positionCS.z = max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
 #endif
+    }
     
     output.baseUV = TransformBaseUV(input.baseUV);
 #endif
