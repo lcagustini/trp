@@ -17,7 +17,7 @@ float3 GetLighting(surface surfaceWS, GI gi) {
     shadowData shadowData = GetShadowData(surfaceWS);
     shadowData.shadowMask = gi.shadowMask;
     
-    float3 color = gi.diffuse;
+    float3 color = gi.diffuse * surfaceWS.color;
 
     for (int i = 0; i < GetDirectionalLightCount(); i++) {
         color += GetLighting(surfaceWS, GetDirectionalLight(i, surfaceWS, shadowData));

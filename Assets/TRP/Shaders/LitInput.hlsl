@@ -2,8 +2,10 @@
 #define TRP_LIT_INPUT
 
 TEXTURE2D(_BaseMap);
-TEXTURE2D(_EmissiveMap);
 SAMPLER(sampler_BaseMap);
+
+TEXTURE2D(_EmissiveMap);
+SAMPLER(sampler_EmissiveMap);
 
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
@@ -24,7 +26,7 @@ float4 GetBase(float2 baseUV) {
 }
 
 float3 GetEmission(float2 baseUV) {
-    float4 map = SAMPLE_TEXTURE2D(_EmissiveMap, sampler_BaseMap, baseUV);
+    float4 map = SAMPLE_TEXTURE2D(_EmissiveMap, sampler_EmissiveMap, baseUV);
     float4 color = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _EmissiveColor);
     return map.rgb * color.rgb;
 }

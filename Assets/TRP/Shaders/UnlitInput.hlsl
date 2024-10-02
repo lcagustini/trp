@@ -1,5 +1,5 @@
-#ifndef TRP_LIT_INPUT
-#define TRP_LIT_INPUT
+#ifndef TRP_UNLIT_INPUT
+#define TRP_UNLIT_INPUT
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);

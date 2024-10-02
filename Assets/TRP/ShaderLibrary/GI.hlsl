@@ -76,7 +76,7 @@ GI GetGI(float2 lightMapUV, surface surfaceWS) {
 #elif _SHADOW_MASK_ALWAYS
     gi.shadowMask.always = true;
     gi.shadowMask.distance = false;
-    gi.shadowMask.shadows = SampleBakedShadows(lightMapUV, surfaceWS);
+    gi.shadowMask.shadows = SampleBakedShadows(lightMapUV);
 #else
     gi.shadowMask.always = false;
     gi.shadowMask.distance = false;
