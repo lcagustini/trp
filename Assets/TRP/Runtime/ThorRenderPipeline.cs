@@ -10,12 +10,15 @@ public partial class ThorRenderPipeline : RenderPipeline
     private readonly bool useGPUInstancing;
 
     private readonly ShadowSettings shadowSettings;
-    
-    public ThorRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher, ShadowSettings shadowSettings)
+
+    private readonly PostProcessSettings postProcessSettings;
+
+    public ThorRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher, ShadowSettings shadowSettings, PostProcessSettings postProcessSettings)
     {
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
         this.shadowSettings = shadowSettings;
+        this.postProcessSettings = postProcessSettings;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
 
@@ -25,14 +28,14 @@ public partial class ThorRenderPipeline : RenderPipeline
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
     {
     }
-    
+
     protected override void Render(ScriptableRenderContext context, List<Camera> cameras)
     {
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, shadowSettings);
+            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, shadowSettings, postProcessSettings);
         }
     }
-    
+
     partial void InitializeEditor();
 }

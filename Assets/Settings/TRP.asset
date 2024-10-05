@@ -30,3 +30,4 @@ MonoBehaviour:
     other:
       atlasSize: 1024
       filter: 0
+  postProcessSettings: {fileID: 11400000, guid: 46798a92eed047d48839a776eb569afc, type: 2}

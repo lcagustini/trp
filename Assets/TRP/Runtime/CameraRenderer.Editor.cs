@@ -49,13 +49,14 @@ public partial class CameraRenderer
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
     }
 
-    partial void DrawGizmos()
+    partial void DrawGizmosBeforePostProcess()
     {
-        if (Handles.ShouldRenderGizmos()) 
-        {
-            context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
-            context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
-        }
+        if (Handles.ShouldRenderGizmos()) context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
+    }
+    
+    partial void DrawGizmosAfterPostProcess()
+    {
+        if (Handles.ShouldRenderGizmos()) context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
     }
 }
 #else

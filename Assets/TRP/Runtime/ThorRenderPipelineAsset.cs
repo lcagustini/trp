@@ -9,9 +9,11 @@ public class ThorRenderPipelineAsset : RenderPipelineAsset
     [SerializeField] private bool useSRPBatcher = true;
 
     [SerializeField] private ShadowSettings shadows;
-    
+
+    [SerializeField] private PostProcessSettings postProcessSettings;
+
     protected override RenderPipeline CreatePipeline()
     {
-        return new ThorRenderPipeline(useDynamicBatching, useGPUInstancing, useSRPBatcher, shadows);
+        return new ThorRenderPipeline(useDynamicBatching, useGPUInstancing, useSRPBatcher, shadows, postProcessSettings);
     }
 }
