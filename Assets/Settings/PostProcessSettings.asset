@@ -12,4 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 912574abaaf51c84192865633bf5c3c1, type: 3}
   m_Name: PostProcessSettings
   m_EditorClassIdentifier: 
+  <Bloom>k__BackingField:
+    maxIterations: 5
+    downscaleLimit: 1
+    bicubicUpsampling: 0
+    threshold: 0.7
+    thresholdKnee: 0.39
+    intensity: 1
   shader: {fileID: 4800000, guid: 208f4297ed5e8794c9210dd5f583caaf, type: 3}
