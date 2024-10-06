@@ -15,6 +15,7 @@ public partial class PostProcessStack
         BloomScatterFinal,
 
         Copy,
+        Final,
 
         ToneMappingNone,
         ToneMappingACES,
@@ -49,6 +50,10 @@ public partial class PostProcessStack
     private readonly int smhMidtonesId = Shader.PropertyToID("_SMHMidtones");
     private readonly int smhHighlightsId = Shader.PropertyToID("_SMHHighlights");
     private readonly int smhRangeId = Shader.PropertyToID("_SMHRange");
+    
+    private readonly int colorGradingLUTId = Shader.PropertyToID("_ColorGradingLUT");
+    private readonly int colorGradingLUTParametersId = Shader.PropertyToID("_ColorGradingLUTParameters");
+    private readonly int colorGradingLUTInLogId = Shader.PropertyToID("_ColorGradingLUTInLogC");
 
     private readonly CommandBuffer buffer = new()
     {
@@ -60,6 +65,8 @@ public partial class PostProcessStack
     private ScriptableRenderContext context;
     private Camera camera;
     private PostProcessSettings settings;
+    
+    private int colorLUTResolution;
 
     private readonly int bloomPyramidId;
 
@@ -74,12 +81,13 @@ public partial class PostProcessStack
         }
     }
 
-    public void Setup(ScriptableRenderContext context, Camera camera, PostProcessSettings settings, bool useHDR)
+    public void Setup(ScriptableRenderContext context, Camera camera, PostProcessSettings settings, bool useHDR, int colorLUTResolution)
     {
         this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
         this.useHDR = useHDR;
+        this.colorLUTResolution = colorLUTResolution;
         ApplySceneViewState();
     }
 
@@ -248,6 +256,11 @@ public partial class PostProcessStack
         ConfigureSplitToning();
         ConfigureChannelMixer();
         ConfigureShadowsMidtonesHighlights();
+        
+        int lutHeight = colorLUTResolution;
+        int lutWidth = lutHeight * lutHeight;
+        buffer.GetTemporaryRT(colorGradingLUTId, lutWidth, lutHeight, 0, FilterMode.Bilinear, RenderTextureFormat.DefaultHDR);
+        buffer.SetGlobalVector(colorGradingLUTParametersId, new Vector4(lutHeight, 0.5f / lutWidth, 0.5f / lutHeight, lutHeight / (lutHeight - 1f)));
 
         Pass pass = settings.ToneMapping.mode switch
         {
@@ -255,6 +268,11 @@ public partial class PostProcessStack
             ToneMappingSettings.Mode.ACES => Pass.ToneMappingACES,
             _ => Pass.Copy
         };
-        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, pass);
+        buffer.SetGlobalFloat(colorGradingLUTInLogId, useHDR && pass != Pass.ToneMappingNone ? 1f : 0f);
+        Draw(sourceId, colorGradingLUTId, pass);
+        
+        buffer.SetGlobalVector(colorGradingLUTParametersId, new Vector4(1f / lutWidth, 1f / lutHeight, lutHeight - 1f));
+        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Final);
+        buffer.ReleaseTemporaryRT(colorGradingLUTId);
     }
 }

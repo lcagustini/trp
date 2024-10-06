@@ -12,6 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 912574abaaf51c84192865633bf5c3c1, type: 3}
   m_Name: PostProcessSettings
   m_EditorClassIdentifier: 
+  <ShadowsMidtonesHighlights>k__BackingField:
+    shadows: {r: 1, g: 1, b: 1, a: 1}
+    midtones: {r: 1, g: 1, b: 1, a: 1}
+    highlights: {r: 1, g: 1, b: 1, a: 1}
+    shadowsStart: 0
+    shadowsEnd: 0.3
+    highlightsStart: 0.55
+    highLightsEnd: 1
   <ChannelMixer>k__BackingField:
     red: {x: 1, y: 0, z: 0}
     green: {x: 0, y: 1, z: 0}

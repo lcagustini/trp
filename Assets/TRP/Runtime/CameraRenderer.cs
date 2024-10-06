@@ -19,7 +19,7 @@ public partial class CameraRenderer
     private readonly PostProcessStack postProcessStack = new();
     private readonly CommandBuffer buffer = new();
 
-    public void Render(ScriptableRenderContext context, Camera camera, bool allowHDR, bool useDynamicBatching, bool useGPUInstancing, ShadowSettings shadowSettings, PostProcessSettings postProcessSettings)
+    public void Render(ScriptableRenderContext context, Camera camera, bool allowHDR, bool useDynamicBatching, bool useGPUInstancing, ShadowSettings shadowSettings, PostProcessSettings postProcessSettings, int colorLUTResolution)
     {
         this.context = context;
         this.camera = camera;
@@ -32,7 +32,7 @@ public partial class CameraRenderer
         useHDR = allowHDR && camera.allowHDR;
 
         lighting.Setup(context, cullingResults, shadowSettings);
-        postProcessStack.Setup(context, camera, postProcessSettings, useHDR);
+        postProcessStack.Setup(context, camera, postProcessSettings, useHDR, colorLUTResolution);
         Setup();
 
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);

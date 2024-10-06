@@ -35,6 +35,10 @@ float4 _SMHMidtones;
 float4 _SMHHighlights;
 float4 _SMHRange;
 
+TEXTURE2D(_ColorGradingLUT);
+float4 _ColorGradingLUTParameters;
+bool _ColorGradingLUTInLogC;
+
 float4 GetSourceTexelSize() {
     return _PostProcessSource_TexelSize;
 }
@@ -196,7 +200,6 @@ float3 ColorGradingSaturation(float3 color, bool useACES) {
 }
 
 float3 ColorGrade(float3 color, bool useACES) {
-    color = min(color, 60.0);
     color = ColorGradePostExposure(color);
     color = ColorGradeWhiteBalance(color);
     color = ColorGradingContrast(color, useACES);
@@ -211,16 +214,29 @@ float3 ColorGrade(float3 color, bool useACES) {
     return max(useACES ? ACEScg_to_ACES(color) : color, 0.0);
 }
 
+float3 GetColorGradedLUT(float2 uv, bool useACES) {
+    float3 color = GetLutStripValue(uv, _ColorGradingLUTParameters);
+    return ColorGrade(_ColorGradingLUTInLogC ? LogCToLinear(color) : color, useACES);
+}
+
 float4 ToneMappingNonePassFragment(fragVaryings input) : SV_TARGET {
-    float4 color = GetSource(input.screenUV);
-    color.rgb = ColorGrade(color.rgb, false);
-    return color;
+    float3 color = GetColorGradedLUT(input.screenUV, false);
+    return float4(color, 1.0);
 }
 
 float4 ToneMappingACESPassFragment(fragVaryings input) : SV_TARGET {
+    float3 color = GetColorGradedLUT(input.screenUV, true);
+    color = AcesTonemap(color);
+    return float4(color, 1.0);
+}
+
+float3 ApplyColorGradingLUT(float3 color) {
+    return ApplyLut2D(TEXTURE2D_ARGS(_ColorGradingLUT, sampler_linear_clamp), saturate(_ColorGradingLUTInLogC ? LinearToLogC(color) : color), _ColorGradingLUTParameters.xyz);
+}
+
+float4 FinalPassFragment(fragVaryings input) : SV_TARGET {
     float4 color = GetSource(input.screenUV);
-    color.rgb = ColorGrade(color.rgb, true);
-    color.rgb = AcesTonemap(color.rgb);
+    color.rgb = ApplyColorGradingLUT(color.rgb);
     return color;
 }
 

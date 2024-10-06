@@ -88,6 +88,17 @@ Shader "Hidden/TRP/Post FX Stack"
             ENDHLSL
         }
 
+        Pass
+        {
+            Name "Final"
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex DefaultPassVertex
+            #pragma fragment FinalPassFragment
+            ENDHLSL
+        }
+
 		Pass
 		{
 			Name "ToneMapping None"
