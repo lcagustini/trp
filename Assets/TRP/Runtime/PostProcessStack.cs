@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static PostProcessSettings;
 
 public partial class PostProcessStack
 {
@@ -8,8 +10,14 @@ public partial class PostProcessStack
         BloomPrefilter,
         BloomHorizontal,
         BloomVertical,
-        BloomCombine,
-        Copy
+        BloomAdd,
+        BloomScatter,
+        BloomScatterFinal,
+
+        Copy,
+
+        ToneMappingNone,
+        ToneMappingACES,
     }
 
     private const string BUFFER_NAME = "Post Process";
@@ -18,10 +26,29 @@ public partial class PostProcessStack
 
     private readonly int postProcessSourceId = Shader.PropertyToID("_PostProcessSource");
     private readonly int postProcessSourceId2 = Shader.PropertyToID("_PostProcessSource2");
+
     private readonly int bloomBicubicUpsamplingId = Shader.PropertyToID("_BloomBicubicUpsampling");
     private readonly int bloomPrefilterId = Shader.PropertyToID("_BloomPrefilter");
     private readonly int bloomThresholdId = Shader.PropertyToID("_BloomThreshold");
     private readonly int bloomIntensityId = Shader.PropertyToID("_BloomIntensity");
+    private readonly int bloomResultId = Shader.PropertyToID("_BloomResult");
+
+    private readonly int colorAdjustmentsId = Shader.PropertyToID("_ColorAdjustments");
+    private readonly int colorFilterId = Shader.PropertyToID("_ColorFilter");
+
+    private readonly int whiteBalanceId = Shader.PropertyToID("_WhiteBalance");
+
+    private readonly int splitToningShadowsId = Shader.PropertyToID("_SplitToningShadows");
+    private readonly int splitToningHighlightsId = Shader.PropertyToID("_SplitToningHighlights");
+
+    private readonly int channelMixerRedId = Shader.PropertyToID("_ChannelMixerRed");
+    private readonly int channelMixerGreenId = Shader.PropertyToID("_ChannelMixerGreen");
+    private readonly int channelMixerBlueId = Shader.PropertyToID("_ChannelMixerBlue");
+    
+    private readonly int smhShadowsId = Shader.PropertyToID("_SMHShadows");
+    private readonly int smhMidtonesId = Shader.PropertyToID("_SMHMidtones");
+    private readonly int smhHighlightsId = Shader.PropertyToID("_SMHHighlights");
+    private readonly int smhRangeId = Shader.PropertyToID("_SMHRange");
 
     private readonly CommandBuffer buffer = new()
     {
@@ -58,7 +85,16 @@ public partial class PostProcessStack
 
     public void Render(int sourceId)
     {
-        DoBloom(sourceId);
+        if (DoBloom(sourceId))
+        {
+            DoColorGradingAndToneMapping(bloomResultId);
+            buffer.ReleaseTemporaryRT(bloomResultId);
+        }
+        else
+        {
+            DoColorGradingAndToneMapping(sourceId);
+        }
+
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
@@ -72,19 +108,17 @@ public partial class PostProcessStack
 
     partial void ApplySceneViewState();
 
-    private void DoBloom(int sourceId)
+    private bool DoBloom(int sourceId)
     {
-        buffer.BeginSample("Bloom");
-
-        PostProcessSettings.BloomSettings bloom = settings.Bloom;
+        BloomSettings bloom = settings.Bloom;
         int width = camera.pixelWidth / 2;
         int height = camera.pixelHeight / 2;
         if (bloom.maxIterations == 0 || height < 2 * bloom.downscaleLimit || width < 2 * bloom.downscaleLimit || bloom.intensity <= 0f)
         {
-            Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Copy);
-            buffer.EndSample("Bloom");
-            return;
+            return false;
         }
+
+        buffer.BeginSample("Bloom");
 
         Vector4 threshold;
         threshold.x = Mathf.GammaToLinearSpace(bloom.threshold);
@@ -120,7 +154,24 @@ public partial class PostProcessStack
         buffer.ReleaseTemporaryRT(bloomPrefilterId);
         buffer.SetGlobalFloat(bloomBicubicUpsamplingId, bloom.bicubicUpsampling ? 1f : 0f);
 
-        buffer.SetGlobalFloat(bloomIntensityId, 1f);
+        Pass combinePass;
+        Pass finalPass;
+        float finalIntensity;
+        if (bloom.mode == BloomSettings.Mode.Additive)
+        {
+            combinePass = Pass.BloomAdd;
+            finalPass = Pass.BloomAdd;
+            buffer.SetGlobalFloat(bloomIntensityId, 1f);
+            finalIntensity = bloom.intensity;
+        }
+        else
+        {
+            combinePass = Pass.BloomScatter;
+            finalPass = Pass.BloomScatterFinal;
+            buffer.SetGlobalFloat(bloomIntensityId, bloom.scatter);
+            finalIntensity = Mathf.Min(bloom.intensity, 0.95f);
+        }
+
         if (i > 1)
         {
             buffer.ReleaseTemporaryRT(fromId - 1);
@@ -129,7 +180,7 @@ public partial class PostProcessStack
             for (i -= 1; i > 0; i--)
             {
                 buffer.SetGlobalTexture(postProcessSourceId2, toId + 1);
-                Draw(fromId, toId, Pass.BloomCombine);
+                Draw(fromId, toId, combinePass);
                 buffer.ReleaseTemporaryRT(fromId);
                 buffer.ReleaseTemporaryRT(toId + 1);
                 fromId = toId;
@@ -141,11 +192,69 @@ public partial class PostProcessStack
             buffer.ReleaseTemporaryRT(bloomPyramidId);
         }
 
-        buffer.SetGlobalFloat(bloomIntensityId, bloom.intensity);
+        buffer.SetGlobalFloat(bloomIntensityId, finalIntensity);
         buffer.SetGlobalTexture(postProcessSourceId2, sourceId);
-        Draw(fromId, BuiltinRenderTextureType.CameraTarget, Pass.BloomCombine);
+        buffer.GetTemporaryRT(bloomResultId, camera.pixelWidth, camera.pixelHeight, 0, FilterMode.Bilinear, format);
+        Draw(fromId, bloomResultId, finalPass);
         buffer.ReleaseTemporaryRT(fromId);
 
         buffer.EndSample("Bloom");
+        return true;
+    }
+
+    private void ConfigureColorAdjustments()
+    {
+        ColorAdjustmentsSettings colorAdjustments = settings.ColorAdjustments;
+        buffer.SetGlobalVector(colorAdjustmentsId, new Vector4(Mathf.Pow(2f, colorAdjustments.postExposure), colorAdjustments.contrast * 0.01f + 1f, colorAdjustments.hueShift * (1f / 360f), colorAdjustments.saturation * 0.01f + 1f));
+        buffer.SetGlobalColor(colorFilterId, colorAdjustments.colorFilter.linear);
+    }
+
+    private void ConfigureWhiteBalance()
+    {
+        WhiteBalanceSettings whiteBalance = settings.WhiteBalance;
+        buffer.SetGlobalVector(whiteBalanceId, ColorUtils.ColorBalanceToLMSCoeffs(whiteBalance.temperature, whiteBalance.tint));
+    }
+
+    private void ConfigureSplitToning()
+    {
+        SplitToningSettings splitToning = settings.SplitToning;
+        Color splitColor = splitToning.shadows;
+        splitColor.a = splitToning.balance * 0.01f;
+        buffer.SetGlobalColor(splitToningShadowsId, splitColor);
+        buffer.SetGlobalColor(splitToningHighlightsId, splitToning.highlights);
+    }
+
+    private void ConfigureChannelMixer()
+    {
+        ChannelMixerSettings channelMixer = settings.ChannelMixer;
+        buffer.SetGlobalVector(channelMixerRedId, channelMixer.red);
+        buffer.SetGlobalVector(channelMixerGreenId, channelMixer.green);
+        buffer.SetGlobalVector(channelMixerBlueId, channelMixer.blue);
+    }
+
+    private void ConfigureShadowsMidtonesHighlights()
+    {
+        ShadowsMidtonesHighlightsSettings smh = settings.ShadowsMidtonesHighlights;
+        buffer.SetGlobalColor(smhShadowsId, smh.shadows.linear);
+        buffer.SetGlobalColor(smhMidtonesId, smh.midtones.linear);
+        buffer.SetGlobalColor(smhHighlightsId, smh.highlights.linear);
+        buffer.SetGlobalVector(smhRangeId, new Vector4(smh.shadowsStart, smh.shadowsEnd, smh.highlightsStart, smh.highLightsEnd));
+    }
+
+    private void DoColorGradingAndToneMapping(int sourceId)
+    {
+        ConfigureColorAdjustments();
+        ConfigureWhiteBalance();
+        ConfigureSplitToning();
+        ConfigureChannelMixer();
+        ConfigureShadowsMidtonesHighlights();
+
+        Pass pass = settings.ToneMapping.mode switch
+        {
+            ToneMappingSettings.Mode.None => Pass.ToneMappingNone,
+            ToneMappingSettings.Mode.ACES => Pass.ToneMappingACES,
+            _ => Pass.Copy
+        };
+        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, pass);
     }
 }
