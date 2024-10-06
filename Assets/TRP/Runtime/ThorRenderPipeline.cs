@@ -8,13 +8,15 @@ public partial class ThorRenderPipeline : RenderPipeline
 
     private readonly bool useDynamicBatching;
     private readonly bool useGPUInstancing;
+    private readonly bool allowHDR;
 
     private readonly ShadowSettings shadowSettings;
 
     private readonly PostProcessSettings postProcessSettings;
 
-    public ThorRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher, ShadowSettings shadowSettings, PostProcessSettings postProcessSettings)
+    public ThorRenderPipeline(bool allowHDR, bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher, ShadowSettings shadowSettings, PostProcessSettings postProcessSettings)
     {
+        this.allowHDR = allowHDR;
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
         this.shadowSettings = shadowSettings;
@@ -33,7 +35,7 @@ public partial class ThorRenderPipeline : RenderPipeline
     {
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, shadowSettings, postProcessSettings);
+            renderer.Render(context, camera, allowHDR, useDynamicBatching, useGPUInstancing, shadowSettings, postProcessSettings);
         }
     }
 

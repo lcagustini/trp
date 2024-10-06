@@ -28,6 +28,8 @@ public partial class PostProcessStack
         name = BUFFER_NAME
     };
 
+    private bool useHDR;
+
     private ScriptableRenderContext context;
     private Camera camera;
     private PostProcessSettings settings;
@@ -45,11 +47,12 @@ public partial class PostProcessStack
         }
     }
 
-    public void Setup(ScriptableRenderContext context, Camera camera, PostProcessSettings settings)
+    public void Setup(ScriptableRenderContext context, Camera camera, PostProcessSettings settings, bool useHDR)
     {
         this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
+        this.useHDR = useHDR;
         ApplySceneViewState();
     }
 
@@ -82,7 +85,7 @@ public partial class PostProcessStack
             buffer.EndSample("Bloom");
             return;
         }
-        
+
         Vector4 threshold;
         threshold.x = Mathf.GammaToLinearSpace(bloom.threshold);
         threshold.y = threshold.x * bloom.thresholdKnee;
@@ -91,12 +94,12 @@ public partial class PostProcessStack
         threshold.y -= threshold.x;
         buffer.SetGlobalVector(bloomThresholdId, threshold);
 
-        RenderTextureFormat format = RenderTextureFormat.Default;
+        RenderTextureFormat format = useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default;
         buffer.GetTemporaryRT(bloomPrefilterId, width, height, 0, FilterMode.Bilinear, format);
         Draw(sourceId, bloomPrefilterId, Pass.BloomPrefilter);
         width /= 2;
         height /= 2;
-        
+
         int fromId = bloomPrefilterId;
         int toId = bloomPyramidId + 1;
         int i;

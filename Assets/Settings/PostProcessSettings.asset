@@ -16,7 +16,7 @@ MonoBehaviour:
     maxIterations: 5
     downscaleLimit: 1
     bicubicUpsampling: 0
-    threshold: 0.7
-    thresholdKnee: 0.39
+    threshold: 1
+    thresholdKnee: 0.5
     intensity: 1
   shader: {fileID: 4800000, guid: 208f4297ed5e8794c9210dd5f583caaf, type: 3}
