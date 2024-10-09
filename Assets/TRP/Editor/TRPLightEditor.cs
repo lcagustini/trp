@@ -13,5 +13,10 @@ public class TRPLightEditor : LightEditor
             settings.DrawInnerAndOuterSpotAngle();
             settings.ApplyModifiedProperties();
         }
+        
+        Light light = target as Light;
+        if (light.cullingMask != -1) {
+            EditorGUILayout.HelpBox("Culling Mask only affects shadows.", MessageType.Warning);
+        }
     }
 }

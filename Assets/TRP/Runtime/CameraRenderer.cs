@@ -3,10 +3,12 @@ using UnityEngine.Rendering;
 
 public partial class CameraRenderer
 {
+    private static readonly CameraSettings defaultCameraSettings = new();
+    
     private static readonly ShaderTagId unlitShaderTagId = new("SRPDefaultUnlit");
     private static readonly ShaderTagId litShaderTagId = new("TRPLit");
 
-    private static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
+    private static readonly int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
 
     private ScriptableRenderContext context;
     private Camera camera;
@@ -23,6 +25,10 @@ public partial class CameraRenderer
     {
         this.context = context;
         this.camera = camera;
+        
+        TRPCamera trpCamera = camera.GetComponent<TRPCamera>();
+        CameraSettings cameraSettings = trpCamera != null ? trpCamera.Settings : defaultCameraSettings;
+        if (cameraSettings.OverridesPostProcess) postProcessSettings = cameraSettings.postProcessSettingsOverride;
 
         PrepareBuffer();
         PrepareForSceneWindow();
@@ -32,7 +38,7 @@ public partial class CameraRenderer
         useHDR = allowHDR && camera.allowHDR;
 
         lighting.Setup(context, cullingResults, shadowSettings);
-        postProcessStack.Setup(context, camera, postProcessSettings, useHDR, colorLUTResolution);
+        postProcessStack.Setup(context, camera, postProcessSettings, useHDR, colorLUTResolution, cameraSettings.finalBlendMode);
         Setup();
 
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);

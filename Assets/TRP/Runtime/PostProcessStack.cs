@@ -5,6 +5,8 @@ using static PostProcessSettings;
 
 public partial class PostProcessStack
 {
+    private static readonly Rect fullViewRect = new(0f, 0f, 1f, 1f);
+
     private enum Pass
     {
         BloomPrefilter,
@@ -45,15 +47,18 @@ public partial class PostProcessStack
     private readonly int channelMixerRedId = Shader.PropertyToID("_ChannelMixerRed");
     private readonly int channelMixerGreenId = Shader.PropertyToID("_ChannelMixerGreen");
     private readonly int channelMixerBlueId = Shader.PropertyToID("_ChannelMixerBlue");
-    
+
     private readonly int smhShadowsId = Shader.PropertyToID("_SMHShadows");
     private readonly int smhMidtonesId = Shader.PropertyToID("_SMHMidtones");
     private readonly int smhHighlightsId = Shader.PropertyToID("_SMHHighlights");
     private readonly int smhRangeId = Shader.PropertyToID("_SMHRange");
-    
+
     private readonly int colorGradingLUTId = Shader.PropertyToID("_ColorGradingLUT");
     private readonly int colorGradingLUTParametersId = Shader.PropertyToID("_ColorGradingLUTParameters");
     private readonly int colorGradingLUTInLogId = Shader.PropertyToID("_ColorGradingLUTInLogC");
+
+    private readonly int finalSrcBlendId = Shader.PropertyToID("_FinalSrcBlend");
+    private readonly int finalDstBlendId = Shader.PropertyToID("_FinalDstBlend");
 
     private readonly CommandBuffer buffer = new()
     {
@@ -65,8 +70,9 @@ public partial class PostProcessStack
     private ScriptableRenderContext context;
     private Camera camera;
     private PostProcessSettings settings;
-    
+
     private int colorLUTResolution;
+    private CameraSettings.FinalBlendMode finalBlendMode;
 
     private readonly int bloomPyramidId;
 
@@ -81,13 +87,14 @@ public partial class PostProcessStack
         }
     }
 
-    public void Setup(ScriptableRenderContext context, Camera camera, PostProcessSettings settings, bool useHDR, int colorLUTResolution)
+    public void Setup(ScriptableRenderContext context, Camera camera, PostProcessSettings settings, bool useHDR, int colorLUTResolution, CameraSettings.FinalBlendMode finalBlendMode)
     {
         this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
         this.useHDR = useHDR;
         this.colorLUTResolution = colorLUTResolution;
+        this.finalBlendMode = finalBlendMode;
         ApplySceneViewState();
     }
 
@@ -112,6 +119,16 @@ public partial class PostProcessStack
         buffer.SetGlobalTexture(postProcessSourceId, from);
         buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
         buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass, MeshTopology.Triangles, 3);
+    }
+
+    private void DrawFinal(RenderTargetIdentifier from)
+    {
+        buffer.SetGlobalFloat(finalSrcBlendId, (float)finalBlendMode.source);
+        buffer.SetGlobalFloat(finalDstBlendId, (float)finalBlendMode.destination);
+        buffer.SetGlobalTexture(postProcessSourceId, from);
+        buffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget, finalBlendMode.destination == BlendMode.Zero && camera.rect == fullViewRect ? RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load, RenderBufferStoreAction.Store);
+        buffer.SetViewport(camera.pixelRect);
+        buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)Pass.Final, MeshTopology.Triangles, 3);
     }
 
     partial void ApplySceneViewState();
@@ -256,7 +273,7 @@ public partial class PostProcessStack
         ConfigureSplitToning();
         ConfigureChannelMixer();
         ConfigureShadowsMidtonesHighlights();
-        
+
         int lutHeight = colorLUTResolution;
         int lutWidth = lutHeight * lutHeight;
         buffer.GetTemporaryRT(colorGradingLUTId, lutWidth, lutHeight, 0, FilterMode.Bilinear, RenderTextureFormat.DefaultHDR);
@@ -270,9 +287,9 @@ public partial class PostProcessStack
         };
         buffer.SetGlobalFloat(colorGradingLUTInLogId, useHDR && pass != Pass.ToneMappingNone ? 1f : 0f);
         Draw(sourceId, colorGradingLUTId, pass);
-        
+
         buffer.SetGlobalVector(colorGradingLUTParametersId, new Vector4(1f / lutWidth, 1f / lutHeight, lutHeight - 1f));
-        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Final);
+        DrawFinal(sourceId);
         buffer.ReleaseTemporaryRT(colorGradingLUTId);
     }
 }

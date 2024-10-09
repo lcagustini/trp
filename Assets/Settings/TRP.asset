@@ -29,7 +29,7 @@ MonoBehaviour:
       cascadeRatio2: 0.25
       cascadeRatio3: 0.5
     other:
-      atlasSize: 1024
-      filter: 0
+      atlasSize: 512
+      filter: 1
   postProcessSettings: {fileID: 11400000, guid: 46798a92eed047d48839a776eb569afc, type: 2}
   colorLUTResolution: 32

@@ -38,7 +38,7 @@ float4 UnlitPassFragment(fragVaryings input) : SV_TARGET {
 #if _CLIPPING_ON
     clip(base.a - GetCutoff(input.baseUV));
 #endif
-    return base;
+    return float4(base.rgb, GetFinalAlpha(base.a));
 }
 
 #endif

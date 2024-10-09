@@ -61,7 +61,7 @@ float4 LitPassFragment(fragVaryings input) : SV_TARGET {
     const GI gi = GetGI(GI_FRAGMENT_DATA(input), surface);
     float3 color = GetLighting(surface, gi);
     color += GetEmission(input.baseUV);
-    return float4(color, surface.alpha);
+    return float4(color, GetFinalAlpha(surface.alpha));
 }
 
 #endif
